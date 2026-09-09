@@ -3,37 +3,59 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
 
-// IndexedDB Setup
+// IndexedDB Setup for permanent data storage
 let db;
 const request = indexedDB.open("ProWorkOrders", 1);
 request.onupgradeneeded = e => {
   db = e.target.result;
   db.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
 };
-request.onsuccess = e => { db = e.target.result; loadHistory(); };
+request.onsuccess = e => { 
+  db = e.target.result; 
+  loadHistory(); 
+};
+
+// Check for API key on load and populate settings
+document.addEventListener("DOMContentLoaded", () => {
+  const savedKey = localStorage.getItem('GEMINI_KEY');
+  if (savedKey) {
+    document.getElementById('apiKeyInput').value = savedKey;
+  }
+});
 
 function toggleSettings() {
   document.getElementById('settingsCard').classList.toggle('hidden');
-  document.getElementById('apiKeyInput').value = localStorage.getItem('GEMINI_KEY') || '';
 }
 
 function saveApiKey() {
-  localStorage.setItem('GEMINI_KEY', document.getElementById('apiKeyInput').value.trim());
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) {
+    alert("Please enter a valid key.");
+    return;
+  }
+  localStorage.setItem('GEMINI_KEY', key);
+  alert("API Key saved permanently on this device!");
   toggleSettings();
 }
 
 async function processImage(event) {
   const file = event.target.files[0];
   if (!file) return;
+  
   const key = localStorage.getItem('GEMINI_KEY');
-  if (!key) return alert("Add Gemini API key in settings first.");
+  if (!key) {
+    alert("Please add your Gemini API key in Settings first.");
+    toggleSettings();
+    return;
+  }
 
   document.getElementById('statusMsg').classList.remove('hidden');
   
   try {
-    const base64 = await new Promise(r => {
+    const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => r(reader.result.split(',')[1]);
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = error => reject(error);
       reader.readAsDataURL(file);
     });
 
@@ -47,20 +69,33 @@ async function processImage(event) {
     Format amounts as numbers. Do not calculate totals, just extract what is written.`;
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", 
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }],
         generationConfig: { response_mime_type: "application/json" }
       })
     });
 
-    const data = JSON.parse((await res.json()).candidates[0].content.parts[0].text);
+    const jsonResponse = await res.json();
+
+    // NEW: Proper Error Handling
+    if (jsonResponse.error) {
+      throw new Error(jsonResponse.error.message || "Invalid API Key or API Error.");
+    }
+
+    if (!jsonResponse.candidates || jsonResponse.candidates.length === 0) {
+      throw new Error("No data returned. Please try taking a clearer photo.");
+    }
+
+    const data = JSON.parse(jsonResponse.candidates[0].content.parts[0].text);
     populateForm(data);
+    
   } catch (err) {
-    alert("Scan failed: " + err);
+    alert("Scan failed: " + err.message);
   } finally {
     document.getElementById('statusMsg').classList.add('hidden');
-    event.target.value = '';
+    event.target.value = ''; // Reset camera input
   }
 }
 
@@ -115,18 +150,43 @@ function calculateMath() {
 function saveRecord(e) {
   e.preventDefault();
   
+  // Package up all the data
+  const parts = [];
+  document.querySelectorAll('#partsBody tr').forEach(tr => {
+    parts.push({
+      qty: tr.children[0].firstElementChild.value,
+      desc: tr.children[1].firstElementChild.value,
+      amount: tr.children[2].firstElementChild.value
+    });
+  });
+
+  const labor = [];
+  document.querySelectorAll('#laborBody tr').forEach(tr => {
+    labor.push({
+      desc: tr.children[0].firstElementChild.value,
+      amount: tr.children[1].firstElementChild.value
+    });
+  });
+
   const record = {
     date: document.getElementById('f_date').value,
+    phone: document.getElementById('f_phone').value,
     name: document.getElementById('f_name').value,
     address: document.getElementById('f_address').value,
+    tax: document.getElementById('f_tax').value,
+    trip: document.getElementById('f_trip').value,
+    parts: parts,
+    labor: labor,
     total: document.getElementById('f_grand_total').value,
     timestamp: new Date().getTime()
   };
 
+  // Save securely to IndexedDB
   const tx = db.transaction("orders", "readwrite");
   tx.objectStore("orders").add(record);
   tx.oncomplete = () => {
     document.getElementById('editorCard').classList.add('hidden');
+    alert("Work order saved successfully!");
     loadHistory();
   };
 }
@@ -138,9 +198,13 @@ function loadHistory() {
     const cursor = e.target.result;
     if (cursor) {
       const v = cursor.value;
+      const displayDate = v.date ? v.date : new Date(v.timestamp).toLocaleDateString();
       list.innerHTML += `<div class="record">
-        <div><strong>${v.name || 'Unknown'}</strong><br><small>${v.address}</small></div>
-        <div style="text-align:right; color:#10b981; font-weight:bold;">$${v.total}</div>
+        <div>
+          <strong>${v.name || 'Unknown Customer'}</strong><br>
+          <small style="color: var(--muted);">${displayDate} • ${v.address}</small>
+        </div>
+        <div style="text-align:right; color:#10b981; font-weight:bold;">$${v.total || '0.00'}</div>
       </div>`;
       cursor.continue();
     }
@@ -148,6 +212,33 @@ function loadHistory() {
 }
 
 function exportCSV() {
-  // Logic to pull from IndexedDB and trigger CSV download
-  alert("Export triggered! (Connect to a full CSV generator here)");
+  const tx = db.transaction("orders", "readonly");
+  tx.objectStore("orders").getAll().onsuccess = e => {
+    const records = e.target.result;
+    if (!records.length) return alert("No records to export.");
+    
+    let csv = "ID,Date,Name,Phone,Address,Tax,Trip_Fee,Grand_Total,Type,Qty,Description,Amount\n";
+    
+    records.forEach(r => {
+      // Add Parts
+      if (r.parts) {
+        r.parts.forEach(p => {
+          csv += `"${r.id}","${r.date}","${r.name}","${r.phone}","${r.address}","${r.tax}","${r.trip}","${r.total}","Part","${p.qty}","${p.desc}","${p.amount}"\n`;
+        });
+      }
+      // Add Labor
+      if (r.labor) {
+        r.labor.forEach(l => {
+          csv += `"${r.id}","${r.date}","${r.name}","${r.phone}","${r.address}","${r.tax}","${r.trip}","${r.total}","Labor","","${l.desc}","${l.amount}"\n`;
+        });
+      }
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `work_orders_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  };
 }
