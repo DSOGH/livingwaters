@@ -60,7 +60,7 @@ async function processImage(event) {
     3. Format all amounts as standard numbers.`;
 
     // Updated Model Parameter to gemini-3.6 per instructions
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6:generateContent?key=${key}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${key}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }],
