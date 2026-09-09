@@ -1,90 +1,111 @@
 :root { 
-  --primary: #3b82f6; --primary-hover: #2563eb; 
-  --bg: #0f172a; --card: #1e293b; --card-hover: #273549;
-  --border: #334155; --text: #f8fafc; --muted: #94a3b8; 
-  --success: #10b981; --danger: #ef4444;
+  --primary: #0ea5e9; 
+  --bg-gradient: linear-gradient(135deg, #04101a, #0c2f42, #041a26); 
+  --card: rgba(16, 35, 50, 0.65); 
+  --border: rgba(125, 211, 252, 0.25); 
+  --text: #f0f9ff; 
+  --muted: #7dd3fc; 
+  --success: #34d399; 
+  --danger: #f87171;
 }
+
 * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; background: var(--bg); color: var(--text); padding: 1.25rem; padding-bottom: 5rem; }
+
+body { 
+  margin: 0; background: var(--bg-gradient); color: var(--text); 
+  padding: 1.25rem; padding-bottom: 5rem;
+  background-size: 200% 200%;
+  animation: waterFlow 12s ease infinite;
+}
+
+@keyframes waterFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-h1 { font-size: 1.6rem; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+.main-logo { height: 50px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(14, 165, 233, 0.4)); }
 
-button { border: none; border-radius: 8px; font-weight: 600; cursor: pointer; padding: 0.85rem; transition: all 0.2s; font-size: 0.95rem; }
-button:active { transform: scale(0.98); }
-.btn-primary { background: var(--primary); color: white; width: 100%; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-.btn-secondary { background: var(--border); color: var(--text); }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1rem; }
+button { border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 0.95rem; }
+button:active { transform: scale(0.97); }
+
+.btn-primary, .btn-scan { 
+  background: linear-gradient(135deg, #38bdf8, #0284c7, #0369a1); 
+  border: 1px solid rgba(255,255,255,0.4);
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4), inset 0 2px 5px rgba(255,255,255,0.3);
+  color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem; 
+  padding: 1rem; width: 100%;
+}
+.btn-upload { background: rgba(14, 165, 233, 0.1); color: #bae6fd; border: 1px solid var(--border); box-shadow: none; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 0.6rem 1rem; }
 .btn-icon { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 50%; width: 40px; height: 40px; }
 .btn-dashed { background: transparent; border: 1px dashed var(--muted); color: var(--muted); width: 100%; margin-top: 0.5rem; padding: 0.6rem; }
 
-.scan-actions { margin-bottom: 1.5rem; }
-.btn-scan { background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-.btn-upload { background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
 input[type="file"] { display: none; }
+.scan-actions { margin-bottom: 1.5rem; }
 
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
-.section-header { font-size: 0.85rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; margin: 1.5rem 0 1rem 0; font-weight: 600; text-transform: uppercase; }
+.card { 
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px; 
+  padding: 1.25rem; margin-bottom: 1.25rem; 
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 0 12px rgba(125, 211, 252, 0.1); 
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+
+.section-header { font-size: 0.85rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; margin: 1.5rem 0 1rem 0; font-weight: 700; text-transform: uppercase; text-shadow: 0 0 8px rgba(14, 165, 233, 0.4); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .full { grid-column: span 2; }
 .action-row { display: flex; gap: 0.75rem; }
 
 label { display: block; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 0.4rem; font-weight: 500; }
-input, textarea { width: 100%; background: #0b1120; border: 1px solid var(--border); color: var(--text); padding: 0.75rem; border-radius: 8px; font-size: 1rem; }
+input, textarea { width: 100%; background: rgba(4, 16, 26, 0.8); border: 1px solid var(--border); color: var(--text); padding: 0.75rem; border-radius: 8px; font-size: 1rem; }
+input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
 .readonly { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
-.grand-total { font-size: 1.25rem; font-weight: bold; color: var(--success); border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+.grand-total { font-size: 1.25rem; font-weight: bold; color: var(--success); border-color: var(--success); background: rgba(52, 211, 153, 0.1); text-shadow: 0 0 5px rgba(52, 211, 153, 0.3); }
 
 table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
 th { text-align: left; font-size: 0.75rem; color: var(--muted); padding-bottom: 0.5rem; text-transform: uppercase; }
 td input { padding: 0.6rem; font-size: 0.9rem; }
 
 .history-header { display: flex; justify-content: space-between; align-items: center; margin: 2.5rem 0 1rem 0; }
-.record { border-left: 4px solid var(--primary); padding: 1rem; background: var(--card); border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+.record { border-left: 4px solid var(--primary); padding: 1rem; background: var(--card); border-radius: 12px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); box-shadow: inset 0 0 8px rgba(125, 211, 252, 0.05); }
 .record-btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
-.record-btn { background: var(--border); color: var(--text); padding: 0.5rem 0.8rem; border-radius: 6px; font-size: 0.8rem; }
-.invoice-btn { background: var(--success); color: #000; font-weight: bold; }
+.record-btn { background: rgba(14, 165, 233, 0.2); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 0.8rem; border-radius: 8px; font-size: 0.8rem; }
+.invoice-btn { background: linear-gradient(135deg, #34d399, #059669); border: 1px solid #6ee7b7; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
 .hidden { display: none !important; }
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1.25rem; }
-.modal-content { background: var(--card); padding: 1.5rem; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid var(--border); }
-.status-pulse { text-align: center; color: var(--primary); padding: 1rem; font-weight: 600; animation: pulse 1.5s infinite; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1.25rem; }
+.status-pulse { text-align: center; color: var(--primary); padding: 1rem; font-weight: 600; animation: pulse 1.5s infinite; text-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-/* =========================================
-   PRINT / INVOICE STYLES
-   ========================================= */
+/* PRINT STYLES */
 #invoice-template { display: none; }
-
 @media print {
-  body { background: white; color: black; padding: 0; margin: 0; font-family: serif; }
+  body { background: white; color: black; padding: 0; margin: 0; font-family: serif; animation: none; }
   #app-container { display: none !important; }
   #invoice-template { display: block; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
-  
   .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .inv-logo { width: 250px; height: auto; }
   .inv-company { font-size: 14px; font-weight: bold; text-align: center; margin-top: 20px; }
   .inv-title { text-align: right; font-size: 20px; font-weight: bold; margin-top: 20px; }
   .inv-title small { font-size: 10px; font-weight: normal; display: block; letter-spacing: 1px; }
-
   .inv-info-grid { display: grid; grid-template-columns: 20% 30% 50%; border: 2px solid black; }
   .inv-box { border: 1px solid black; padding: 5px; font-size: 12px; }
   .inv-box strong { font-size: 10px; }
   .full-row { grid-column: span 3; }
   .inv-checkboxes { font-size: 10px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
-
   .inv-table { width: 100%; border-collapse: collapse; border: 2px solid black; border-top: none; }
   .inv-table th, .inv-table td { border: 1px solid black; padding: 5px; font-size: 14px; text-align: left; }
   .inv-table th { background: #f0f0f0; font-size: 12px; }
-  .inv-table td { height: 25px; } /* Gives empty lines spacing */
-
+  .inv-table td { height: 25px; }
   .inv-bottom { display: flex; border: 2px solid black; border-top: none; }
   .inv-labor-box { width: 70%; padding: 5px; border-right: 2px solid black; }
   .inv-totals { width: 30%; }
   .inv-tot-row { display: flex; justify-content: space-between; border-bottom: 1px solid black; padding: 5px; font-size: 12px; font-weight: bold; }
   .inv-tot-row:last-child { border-bottom: none; }
   .inv-grand { font-size: 16px; background: #f0f0f0; }
-
   .inv-footer { text-align: center; font-size: 10px; margin-top: 15px; }
   .handwriting { font-family: 'Comic Sans MS', cursive, sans-serif; font-size: 16px; color: #111; }
 }
