@@ -34,7 +34,7 @@ async function processImage(event) {
   if (!file) return;
   
   const key = localStorage.getItem('GEMINI_KEY');
-  if (!key) return alert("Please add your Gemini API key in Settings first.");
+  if (!key) return alert("Please add your API key in Settings first.");
 
   document.getElementById('statusMsg').classList.remove('hidden');
   currentEditId = null; 
@@ -42,9 +42,32 @@ async function processImage(event) {
   try {
     const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = error => reject(error);
       reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl.split(',')[1]);
+        };
+      };
+      reader.onerror = error => reject(error);
     });
 
     const prompt = `Analyze this handwritten pool/spa work order. Extract data to strict JSON matching this schema:
@@ -59,8 +82,8 @@ async function processImage(event) {
     2. "written_total" MUST be the exact final grand total written on the paper.
     3. Format all amounts as standard numbers.`;
 
-    // Updated Model Parameter to gemini-3.6 per instructions
-     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`, {
+    // Updated to the current standard 3.8 Flash pipeline
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }],
@@ -239,44 +262,32 @@ function editOrder(id) {
   };
 }
 
-/* =========================================
-   INVOICE GENERATION ENGINE
-   ========================================= */
 function generateInvoice(id) {
   db.transaction("orders", "readonly").objectStore("orders").get(id).onsuccess = e => {
     const data = e.target.result;
     if (!data) return;
 
-    // Populate Top Info
     document.getElementById('inv-date').innerText = data.date || '';
     document.getElementById('inv-phone').innerText = data.phone || '';
     document.getElementById('inv-name').innerText = data.name || '';
     document.getElementById('inv-address').innerText = data.address || '';
 
-    // Populate Parts Table
     const tbody = document.getElementById('inv-parts-body');
     tbody.innerHTML = '';
     let rowCount = 0;
     
     (data.parts || []).forEach(p => {
       if (p.desc || p.amount > 0) {
-        tbody.innerHTML += `<tr>
-          <td>${p.qty}</td>
-          <td class="handwriting">${p.desc}</td>
-          <td></td>
-          <td>${p.amount}</td>
-        </tr>`;
+        tbody.innerHTML += `<tr><td>${p.qty}</td><td class="handwriting">${p.desc}</td><td></td><td>${p.amount}</td></tr>`;
         rowCount++;
       }
     });
 
-    // Add empty rows to keep the layout looking like a full sheet
     while (rowCount < 10) {
       tbody.innerHTML += `<tr><td></td><td></td><td></td><td></td></tr>`;
       rowCount++;
     }
 
-    // Populate Labor
     const laborList = document.getElementById('inv-labor-list');
     laborList.innerHTML = '';
     (data.labor || []).forEach(l => {
@@ -284,20 +295,17 @@ function generateInvoice(id) {
     });
     if(data.notes) laborList.innerHTML += `<div style="font-size: 12px; margin-top: 10px; color:#555;">Notes: ${data.notes}</div>`;
 
-    // Populate Totals
     document.getElementById('inv-tot-mat').innerText = data.materials_total || '0.00';
     document.getElementById('inv-tax').innerText = data.tax || '0.00';
     document.getElementById('inv-tot-lab').innerText = data.labor_total || '0.00';
     document.getElementById('inv-trip').innerText = data.trip || '0.00';
     document.getElementById('inv-grand').innerText = data.total || '0.00';
 
-    // Trigger Print Window
     window.print();
   };
 }
 
 function exportCSV() {
-  // Master/Detail Export logic identical to previous version
   const tx = db.transaction("orders", "readonly");
   tx.objectStore("orders").getAll().onsuccess = e => {
     const records = e.target.result;
