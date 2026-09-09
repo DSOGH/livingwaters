@@ -8,50 +8,83 @@
 body { margin: 0; background: var(--bg); color: var(--text); padding: 1.25rem; padding-bottom: 5rem; }
 
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.logo { display: flex; align-items: center; gap: 0.5rem; }
-h1 { font-size: 1.4rem; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
-h2 { font-size: 1.2rem; margin: 0; }
-.badge { background: var(--primary); font-size: 0.65rem; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: bold; }
+h1 { font-size: 1.6rem; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
 
 button { border: none; border-radius: 8px; font-weight: 600; cursor: pointer; padding: 0.85rem; transition: all 0.2s; font-size: 0.95rem; }
 button:active { transform: scale(0.98); }
 .btn-primary { background: var(--primary); color: white; width: 100%; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
 .btn-secondary { background: var(--border); color: var(--text); }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1rem; }
-.btn-icon { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 50%; width: 40px; height: 40px; display: grid; place-items: center; }
+.btn-icon { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 50%; width: 40px; height: 40px; }
 .btn-dashed { background: transparent; border: 1px dashed var(--muted); color: var(--muted); width: 100%; margin-top: 0.5rem; padding: 0.6rem; }
-.btn-scan { background: var(--primary); color: white; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+
+.scan-actions { margin-bottom: 1.5rem; }
+.btn-scan { background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.btn-upload { background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+input[type="file"] { display: none; }
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
-.scan-card { padding: 0; border: none; background: transparent; box-shadow: none; }
-#cameraInput { display: none; }
-
-.section-header { font-size: 0.85rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; margin: 1.5rem 0 1rem 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-.section-header:first-child { margin-top: 0; }
+.section-header { font-size: 0.85rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; margin: 1.5rem 0 1rem 0; font-weight: 600; text-transform: uppercase; }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .full { grid-column: span 2; }
 .action-row { display: flex; gap: 0.75rem; }
 
 label { display: block; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 0.4rem; font-weight: 500; }
-input, textarea { width: 100%; background: #0b1120; border: 1px solid var(--border); color: var(--text); padding: 0.75rem; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s; }
-input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+input, textarea { width: 100%; background: #0b1120; border: 1px solid var(--border); color: var(--text); padding: 0.75rem; border-radius: 8px; font-size: 1rem; }
 .readonly { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
-.grand-total { font-size: 1.25rem; font-weight: bold; color: var(--success); border: 1px solid var(--success); background: rgba(16, 185, 129, 0.05); }
+.grand-total { font-size: 1.25rem; font-weight: bold; color: var(--success); border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
 
 table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
 th { text-align: left; font-size: 0.75rem; color: var(--muted); padding-bottom: 0.5rem; text-transform: uppercase; }
-td { padding: 0.25rem 0; }
 td input { padding: 0.6rem; font-size: 0.9rem; }
 
 .history-header { display: flex; justify-content: space-between; align-items: center; margin: 2.5rem 0 1rem 0; }
-.record { border-left: 4px solid var(--primary); padding: 1.25rem; background: var(--card); border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: background 0.2s; }
-.record:hover { background: var(--card-hover); }
-.record-btn { background: var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-left: 1rem; }
+.record { border-left: 4px solid var(--primary); padding: 1rem; background: var(--card); border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+.record-btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+.record-btn { background: var(--border); color: var(--text); padding: 0.5rem 0.8rem; border-radius: 6px; font-size: 0.8rem; }
+.invoice-btn { background: var(--success); color: #000; font-weight: bold; }
 
-/* Modal & Utilities */
 .hidden { display: none !important; }
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1.25rem; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1.25rem; }
 .modal-content { background: var(--card); padding: 1.5rem; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid var(--border); }
 .status-pulse { text-align: center; color: var(--primary); padding: 1rem; font-weight: 600; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* =========================================
+   PRINT / INVOICE STYLES
+   ========================================= */
+#invoice-template { display: none; }
+
+@media print {
+  body { background: white; color: black; padding: 0; margin: 0; font-family: serif; }
+  #app-container { display: none !important; }
+  #invoice-template { display: block; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+  
+  .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .inv-logo { width: 250px; height: auto; }
+  .inv-company { font-size: 14px; font-weight: bold; text-align: center; margin-top: 20px; }
+  .inv-title { text-align: right; font-size: 20px; font-weight: bold; margin-top: 20px; }
+  .inv-title small { font-size: 10px; font-weight: normal; display: block; letter-spacing: 1px; }
+
+  .inv-info-grid { display: grid; grid-template-columns: 20% 30% 50%; border: 2px solid black; }
+  .inv-box { border: 1px solid black; padding: 5px; font-size: 12px; }
+  .inv-box strong { font-size: 10px; }
+  .full-row { grid-column: span 3; }
+  .inv-checkboxes { font-size: 10px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+
+  .inv-table { width: 100%; border-collapse: collapse; border: 2px solid black; border-top: none; }
+  .inv-table th, .inv-table td { border: 1px solid black; padding: 5px; font-size: 14px; text-align: left; }
+  .inv-table th { background: #f0f0f0; font-size: 12px; }
+  .inv-table td { height: 25px; } /* Gives empty lines spacing */
+
+  .inv-bottom { display: flex; border: 2px solid black; border-top: none; }
+  .inv-labor-box { width: 70%; padding: 5px; border-right: 2px solid black; }
+  .inv-totals { width: 30%; }
+  .inv-tot-row { display: flex; justify-content: space-between; border-bottom: 1px solid black; padding: 5px; font-size: 12px; font-weight: bold; }
+  .inv-tot-row:last-child { border-bottom: none; }
+  .inv-grand { font-size: 16px; background: #f0f0f0; }
+
+  .inv-footer { text-align: center; font-size: 10px; margin-top: 15px; }
+  .handwriting { font-family: 'Comic Sans MS', cursive, sans-serif; font-size: 16px; color: #111; }
+}
