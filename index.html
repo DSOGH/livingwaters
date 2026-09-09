@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Living Scanner</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#04101a">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- MAIN APP UI (Hidden during printing) -->
   <div id="app-container">
     <header>
       <div class="logo">
-        <h1>Living Scanner</h1>
+        <img src="IMG_9956.jpeg" alt="Living Waters" class="main-logo">
       </div>
       <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
     </header>
@@ -24,11 +22,10 @@
       <input type="password" id="apiKeyInput" placeholder="AIzaSy..." />
       <div class="action-row" style="margin-top: 10px;">
         <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
-        <button class="btn-secondary" onclick="toggleSettings()">Close</button>
+        <button class="btn-upload" onclick="toggleSettings()">Close</button>
       </div>
     </div>
 
-    <!-- Scan & Upload Actions -->
     <div class="scan-actions grid">
       <label for="cameraInput" class="btn-scan">
         <span class="icon">📷</span> Camera
@@ -41,9 +38,8 @@
       <input type="file" id="galleryInput" accept="image/*" onchange="processImage(event)">
     </div>
 
-    <div id="statusMsg" class="hidden status-pulse">Analyzing document & calculating totals...</div>
+    <div id="statusMsg" class="hidden status-pulse">Compressing & analyzing document...</div>
 
-    <!-- Main Editor -->
     <div id="editorCard" class="card hidden fade-in">
       <form id="orderForm" onsubmit="handleSaveInitiation(event)">
         <input type="hidden" id="f_paper_total">
@@ -58,14 +54,14 @@
 
         <div class="section-header">Parts & Materials</div>
         <table id="partsTable">
-          <thead><tr><th width="15%">Qty</th><th width="60%">Description</th><th width="25%">Amount</th></tr></thead>
+          <thead><tr><th style="width:15%;">Qty</th><th style="width:60%;">Description</th><th style="width:25%;">Amount</th></tr></thead>
           <tbody id="partsBody"></tbody>
         </table>
         <button type="button" class="btn-dashed" onclick="addPartRow()">+ Add Part</button>
 
         <div class="section-header">Labor Performed</div>
         <table id="laborTable">
-          <thead><tr><th width="75%">Description</th><th width="25%">Amount</th></tr></thead>
+          <thead><tr><th style="width:75%;">Description</th><th style="width:25%;">Amount</th></tr></thead>
           <tbody id="laborBody"></tbody>
         </table>
         <button type="button" class="btn-dashed" onclick="addLaborRow()">+ Add Labor</button>
@@ -84,35 +80,33 @@
 
         <div class="action-row" style="margin-top: 1.5rem;">
           <button type="submit" class="btn-primary" style="flex: 2;">💾 Save Order</button>
-          <button type="button" class="btn-secondary" style="flex: 1;" onclick="cancelEdit()">Discard</button>
+          <button type="button" class="btn-upload" style="flex: 1;" onclick="cancelEdit()">Discard</button>
         </div>
       </form>
     </div>
 
-    <!-- Discrepancy Modal -->
     <div id="discrepancyModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <h3 style="color: #ef4444; margin-top: 0;">⚠️ Total Mismatch</h3>
-        <p style="font-size: 0.9rem; color: var(--muted);">
+      <div class="modal-content card">
+        <h3 style="color: var(--danger); margin-top: 0;">⚠️ Total Mismatch</h3>
+        <p style="font-size: 0.9rem; color: var(--text);">
           Calculated: <strong>$<span id="calcTotalDisplay"></span></strong> | Written: <strong>$<span id="paperTotalDisplay"></span></strong>.
         </p>
         <label>Reason for discrepancy:</label>
         <input type="text" id="f_discrepancy_reason" required>
         <div class="action-row" style="margin-top: 1rem;">
           <button class="btn-primary" onclick="confirmDiscrepancySave()">Save</button>
-          <button class="btn-secondary" onclick="closeDiscrepancyModal()">Cancel</button>
+          <button class="btn-upload" onclick="closeDiscrepancyModal()">Cancel</button>
         </div>
       </div>
     </div>
 
     <div class="history-header">
-      <h2>Stored Orders</h2>
+      <h2 style="color: var(--muted);">Stored Orders</h2>
       <button class="btn-outline" onclick="exportCSV()">📥 Export CSV</button>
     </div>
     <div id="savedList"></div>
   </div>
 
-  <!-- PRINTABLE INVOICE TEMPLATE (Hidden until generation) -->
   <div id="invoice-template">
     <div class="inv-header">
       <img src="IMG_9956.jpeg" class="inv-logo" alt="Living Waters">
@@ -142,10 +136,10 @@
     <table class="inv-table">
       <thead>
         <tr>
-          <th width="10%">Qty.</th>
-          <th width="60%">Description of parts or materials</th>
-          <th width="15%">Price</th>
-          <th width="15%">Amount</th>
+          <th style="width:10%;">Qty.</th>
+          <th style="width:60%;">Description of parts or materials</th>
+          <th style="width:15%;">Price</th>
+          <th style="width:15%;">Amount</th>
         </tr>
       </thead>
       <tbody id="inv-parts-body"></tbody>
