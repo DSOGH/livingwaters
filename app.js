@@ -37,6 +37,7 @@ async function processImage(event) {
   if (!key) return alert("Please add your API key in Settings first.");
 
   document.getElementById('statusMsg').classList.remove('hidden');
+  document.getElementById('statusMsg').innerText = "Compressing & analyzing document...";
   currentEditId = null; 
   
   try {
@@ -82,17 +83,41 @@ async function processImage(event) {
     2. "written_total" MUST be the exact final grand total written on the paper.
     3. Format all amounts as standard numbers.`;
 
-    // Updated to the current standard 3.8 Flash pipeline
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`;
+    const options = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }],
         generationConfig: { response_mime_type: "application/json" }
       })
-    });
+    };
 
-    const jsonResponse = await res.json();
-    if (jsonResponse.error) throw new Error(jsonResponse.error.message);
+    let jsonResponse;
+    let retries = 0;
+    let delay = 2000;
+    
+    // Automatic exponential backoff retry loop
+    while (retries < 5) {
+      const res = await fetch(url, options);
+      jsonResponse = await res.json();
+      
+      if (jsonResponse.error && jsonResponse.error.message.includes("high demand")) {
+        retries++;
+        if (retries >= 5) throw new Error("Google's servers are completely overloaded right now. Please try again later.");
+        
+        document.getElementById('statusMsg').innerText = `Servers busy. Silently retrying... (Attempt ${retries}/5)`;
+        
+        const jitter = Math.random() * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay + jitter));
+        delay *= 2; 
+      } 
+      else if (jsonResponse.error) {
+        throw new Error(jsonResponse.error.message);
+      } 
+      else {
+        break;
+      }
+    }
     
     const data = JSON.parse(jsonResponse.candidates[0].content.parts[0].text);
     populateForm(data);
