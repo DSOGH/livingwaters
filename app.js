@@ -1,40 +1,31 @@
-// Register Service Worker for offline PWA capabilities
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
 
-// IndexedDB Setup for permanent data storage
 let db;
-const request = indexedDB.open("ProWorkOrders", 1);
+let currentEditId = null; // Tracks if we are editing an existing record
+
+const request = indexedDB.open("ProWorkOrders", 2); // Bumped version for new schema
 request.onupgradeneeded = e => {
   db = e.target.result;
-  db.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
+  if (!db.objectStoreNames.contains("orders")) {
+    db.createObjectStore("orders", { keyPath: "id", autoIncrement: true });
+  }
 };
-request.onsuccess = e => { 
-  db = e.target.result; 
-  loadHistory(); 
-};
+request.onsuccess = e => { db = e.target.result; loadHistory(); };
 
-// Check for API key on load and populate settings
 document.addEventListener("DOMContentLoaded", () => {
   const savedKey = localStorage.getItem('GEMINI_KEY');
-  if (savedKey) {
-    document.getElementById('apiKeyInput').value = savedKey;
-  }
+  if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
 });
 
-function toggleSettings() {
-  document.getElementById('settingsCard').classList.toggle('hidden');
-}
+function toggleSettings() { document.getElementById('settingsCard').classList.toggle('hidden'); }
 
 function saveApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) {
-    alert("Please enter a valid key.");
-    return;
-  }
+  if (!key) return alert("Please enter a valid key.");
   localStorage.setItem('GEMINI_KEY', key);
-  alert("API Key saved permanently on this device!");
+  alert("API Key saved!");
   toggleSettings();
 }
 
@@ -43,13 +34,10 @@ async function processImage(event) {
   if (!file) return;
   
   const key = localStorage.getItem('GEMINI_KEY');
-  if (!key) {
-    alert("Please add your Gemini API key in Settings first.");
-    toggleSettings();
-    return;
-  }
+  if (!key) return alert("Please add your Gemini API key in Settings first.");
 
   document.getElementById('statusMsg').classList.remove('hidden');
+  currentEditId = null; // Reset edit state for a new scan
   
   try {
     const base64 = await new Promise((resolve, reject) => {
@@ -59,18 +47,21 @@ async function processImage(event) {
       reader.readAsDataURL(file);
     });
 
-    const prompt = `Analyze this pool/spa work order. Extract data to strict JSON matching this schema:
+    const prompt = `Analyze this handwritten pool/spa work order. Extract data to strict JSON matching this schema:
     {
       "date": "", "phone": "", "name": "", "address": "",
       "parts": [{"qty": "", "desc": "", "amount": 0}],
       "labor": [{"desc": "", "amount": 0}],
-      "tax": 0, "trip": 0
+      "tax": 0, "trip": 0, "written_total": 0, "notes": ""
     }
-    Format amounts as numbers. Do not calculate totals, just extract what is written.`;
+    CRITICAL RULES:
+    1. Intelligently separate physical parts from labor. For example, if a line says "New Liner, install $8000", classify it based on the primary cost (likely a part) or split it if prices are distinct.
+    2. "written_total" MUST be the exact final grand total written on the paper, regardless of the math. If missing, return 0.
+    3. Format all amounts as standard numbers.`;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`, {
-      method: "POST", 
-      headers: { "Content-Type": "application/json" },
+    // Updated to 2.5 Flash for reliability
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }],
         generationConfig: { response_mime_type: "application/json" }
@@ -78,16 +69,8 @@ async function processImage(event) {
     });
 
     const jsonResponse = await res.json();
-
-    // NEW: Proper Error Handling
-    if (jsonResponse.error) {
-      throw new Error(jsonResponse.error.message || "Invalid API Key or API Error.");
-    }
-
-    if (!jsonResponse.candidates || jsonResponse.candidates.length === 0) {
-      throw new Error("No data returned. Please try taking a clearer photo.");
-    }
-
+    if (jsonResponse.error) throw new Error(jsonResponse.error.message);
+    
     const data = JSON.parse(jsonResponse.candidates[0].content.parts[0].text);
     populateForm(data);
     
@@ -95,7 +78,7 @@ async function processImage(event) {
     alert("Scan failed: " + err.message);
   } finally {
     document.getElementById('statusMsg').classList.add('hidden');
-    event.target.value = ''; // Reset camera input
+    event.target.value = '';
   }
 }
 
@@ -106,6 +89,8 @@ function populateForm(data) {
   document.getElementById('f_address').value = data.address || '';
   document.getElementById('f_tax').value = data.tax || 0;
   document.getElementById('f_trip').value = data.trip || 0;
+  document.getElementById('f_notes').value = data.notes || '';
+  document.getElementById('f_paper_total').value = data.written_total || 0;
 
   document.getElementById('partsBody').innerHTML = '';
   (data.parts || []).forEach(p => addPartRow(p.qty, p.desc, p.amount));
@@ -147,10 +132,40 @@ function calculateMath() {
   document.getElementById('f_grand_total').value = (pTotal + lTotal + tax + trip).toFixed(2);
 }
 
-function saveRecord(e) {
+function handleSaveInitiation(e) {
   e.preventDefault();
   
-  // Package up all the data
+  const calcTotal = parseFloat(document.getElementById('f_grand_total').value);
+  const paperTotal = parseFloat(document.getElementById('f_paper_total').value);
+
+  // If paper total exists and doesn't match our math, ask for a reason
+  if (paperTotal > 0 && Math.abs(calcTotal - paperTotal) > 0.05) {
+    document.getElementById('calcTotalDisplay').innerText = calcTotal.toFixed(2);
+    document.getElementById('paperTotalDisplay').innerText = paperTotal.toFixed(2);
+    document.getElementById('f_discrepancy_reason').value = '';
+    document.getElementById('discrepancyModal').classList.remove('hidden');
+  } else {
+    executeFinalSave();
+  }
+}
+
+function confirmDiscrepancySave() {
+  const reason = document.getElementById('f_discrepancy_reason').value.trim();
+  if (!reason) return alert("Please enter a reason for the mismatch.");
+  closeDiscrepancyModal();
+  executeFinalSave(reason);
+}
+
+function closeDiscrepancyModal() {
+  document.getElementById('discrepancyModal').classList.add('hidden');
+}
+
+function cancelEdit() {
+  document.getElementById('editorCard').classList.add('hidden');
+  currentEditId = null;
+}
+
+function executeFinalSave(discrepancyReason = null) {
   const parts = [];
   document.querySelectorAll('#partsBody tr').forEach(tr => {
     parts.push({
@@ -173,20 +188,30 @@ function saveRecord(e) {
     phone: document.getElementById('f_phone').value,
     name: document.getElementById('f_name').value,
     address: document.getElementById('f_address').value,
+    notes: document.getElementById('f_notes').value,
     tax: document.getElementById('f_tax').value,
     trip: document.getElementById('f_trip').value,
+    paper_total: document.getElementById('f_paper_total').value,
+    discrepancy_reason: discrepancyReason,
     parts: parts,
     labor: labor,
     total: document.getElementById('f_grand_total').value,
     timestamp: new Date().getTime()
   };
 
-  // Save securely to IndexedDB
   const tx = db.transaction("orders", "readwrite");
-  tx.objectStore("orders").add(record);
+  const store = tx.objectStore("orders");
+  
+  if (currentEditId) {
+    record.id = currentEditId; // Keep the original ID
+    store.put(record);
+  } else {
+    store.add(record);
+  }
+
   tx.oncomplete = () => {
     document.getElementById('editorCard').classList.add('hidden');
-    alert("Work order saved successfully!");
+    currentEditId = null;
     loadHistory();
   };
 }
@@ -199,46 +224,91 @@ function loadHistory() {
     if (cursor) {
       const v = cursor.value;
       const displayDate = v.date ? v.date : new Date(v.timestamp).toLocaleDateString();
-      list.innerHTML += `<div class="record">
+      
+      let warnIcon = v.discrepancy_reason ? `<span title="Total Mismatch: ${v.discrepancy_reason}" style="color: #ef4444; font-size:1rem;">⚠️</span>` : '';
+
+      list.innerHTML += `
+      <div class="record">
         <div>
-          <strong>${v.name || 'Unknown Customer'}</strong><br>
-          <small style="color: var(--muted);">${displayDate} • ${v.address}</small>
+          <strong style="font-size: 1.05rem;">${v.name || 'Unknown Customer'}</strong> ${warnIcon}<br>
+          <small style="color: var(--muted);">${displayDate} • ${v.address}</small><br>
+          <strong style="color: var(--success); font-size: 0.9rem;">$${v.total || '0.00'}</strong>
         </div>
-        <div style="text-align:right; color:#10b981; font-weight:bold;">$${v.total || '0.00'}</div>
+        <button class="record-btn" onclick="editOrder(${v.id})">Edit</button>
       </div>`;
       cursor.continue();
     }
   };
 }
 
+function editOrder(id) {
+  const tx = db.transaction("orders", "readonly");
+  tx.objectStore("orders").get(id).onsuccess = e => {
+    const record = e.target.result;
+    if (record) {
+      currentEditId = record.id;
+      // Map data to the old format the form expects
+      populateForm({
+        date: record.date, phone: record.phone, name: record.name, address: record.address,
+        notes: record.notes, tax: record.tax, trip: record.trip, written_total: record.paper_total,
+        parts: record.parts, labor: record.labor
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+}
+
+// Master/Detail CSV Export
 function exportCSV() {
   const tx = db.transaction("orders", "readonly");
   tx.objectStore("orders").getAll().onsuccess = e => {
     const records = e.target.result;
     if (!records.length) return alert("No records to export.");
     
-    let csv = "ID,Date,Name,Phone,Address,Tax,Trip_Fee,Grand_Total,Type,Qty,Description,Amount\n";
+    // Clean headers - Row 1 is Work Order summary, Rows below are items
+    let csv = "ID,Date,Customer_Name,Phone,Address,Notes,Tax,Trip_Fee,Grand_Total,Mismatch_Reason\n";
     
     records.forEach(r => {
-      // Add Parts
+      // Escape commas in text fields
+      const safeName = `"${(r.name || '').replace(/"/g, '""')}"`;
+      const safeAddr = `"${(r.address || '').replace(/"/g, '""')}"`;
+      const safeNotes = `"${(r.notes || '').replace(/"/g, '""')}"`;
+      const safeReason = `"${(r.discrepancy_reason || '').replace(/"/g, '""')}"`;
+
+      // 1. Output the Master Header Row for this Order
+      csv += `${r.id},${r.date},${safeName},${r.phone},${safeAddr},${safeNotes},${r.tax},${r.trip},${r.total},${safeReason}\n`;
+      
+      // 2. Add an indent header for items
+      csv += `,,,Type,Qty,Description,Amount,,,\n`;
+
+      // 3. Loop Parts
       if (r.parts) {
         r.parts.forEach(p => {
-          csv += `"${r.id}","${r.date}","${r.name}","${r.phone}","${r.address}","${r.tax}","${r.trip}","${r.total}","Part","${p.qty}","${p.desc}","${p.amount}"\n`;
+          if(p.desc || p.amount > 0) {
+            const safeDesc = `"${(p.desc || '').replace(/"/g, '""')}"`;
+            csv += `,,,Part,${p.qty},${safeDesc},${p.amount},,,\n`;
+          }
         });
       }
-      // Add Labor
+      
+      // 4. Loop Labor
       if (r.labor) {
         r.labor.forEach(l => {
-          csv += `"${r.id}","${r.date}","${r.name}","${r.phone}","${r.address}","${r.tax}","${r.trip}","${r.total}","Labor","","${l.desc}","${l.amount}"\n`;
+          if(l.desc || l.amount > 0) {
+            const safeDesc = `"${(l.desc || '').replace(/"/g, '""')}"`;
+            csv += `,,,Labor,,${safeDesc},${l.amount},,,\n`;
+          }
         });
       }
+      // Blank row to separate orders visually
+      csv += `\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `work_orders_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `work_orders_pro_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
   };
 }
