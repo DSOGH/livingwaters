@@ -3,109 +3,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Work Order Vault Pro</title>
+  <title>Living Scanner</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <header>
-    <div class="logo">
-      <h1>Work Order Vault</h1>
-      <span class="badge">PRO</span>
-    </div>
-    <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
-  </header>
-
-  <!-- Settings -->
-  <div id="settingsCard" class="card hidden slide-down">
-    <label>Google Gemini API Key</label>
-    <input type="password" id="apiKeyInput" placeholder="AIzaSy..." />
-    <div class="action-row">
-      <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
-      <button class="btn-secondary" onclick="toggleSettings()">Close</button>
-    </div>
-  </div>
-
-  <!-- Scanner Button -->
-  <div class="card scan-card">
-    <label for="cameraInput" class="btn-scan">
-      <span class="icon">📷</span> Scan New Work Order
-    </label>
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="processImage(event)">
-  </div>
-
-  <div id="statusMsg" class="hidden status-pulse">Analyzing document & calculating totals...</div>
-
-  <!-- Main Editor -->
-  <div id="editorCard" class="card hidden fade-in">
-    <form id="orderForm" onsubmit="handleSaveInitiation(event)">
-      <input type="hidden" id="f_paper_total"> <!-- Tracks what the AI read as the final total -->
-      
-      <div class="section-header">Customer Info</div>
-      <div class="grid">
-        <div><label>Date</label><input type="text" id="f_date"></div>
-        <div><label>Phone</label><input type="tel" id="f_phone"></div>
-        <div class="full"><label>Name / Property</label><input type="text" id="f_name"></div>
-        <div class="full"><label>Address</label><input type="text" id="f_address"></div>
+  <!-- MAIN APP UI (Hidden during printing) -->
+  <div id="app-container">
+    <header>
+      <div class="logo">
+        <h1>Living Scanner</h1>
       </div>
+      <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
+    </header>
 
-      <div class="section-header">Parts & Materials</div>
-      <table id="partsTable">
-        <thead><tr><th width="15%">Qty</th><th width="60%">Description</th><th width="25%">Amount</th></tr></thead>
-        <tbody id="partsBody"></tbody>
-      </table>
-      <button type="button" class="btn-dashed" onclick="addPartRow()">+ Add Part</button>
-
-      <div class="section-header">Labor Performed</div>
-      <table id="laborTable">
-        <thead><tr><th width="75%">Description</th><th width="25%">Amount</th></tr></thead>
-        <tbody id="laborBody"></tbody>
-      </table>
-      <button type="button" class="btn-dashed" onclick="addLaborRow()">+ Add Labor</button>
-
-      <div class="section-header">Notes</div>
-      <textarea id="f_notes" rows="2" placeholder="Add any specific details, warnings, or customer requests here..."></textarea>
-
-      <div class="section-header">Totals</div>
-      <div class="grid">
-        <div><label>Total Materials</label><input type="number" step="0.01" id="f_tot_materials" readonly class="readonly"></div>
-        <div><label>Total Labor</label><input type="number" step="0.01" id="f_tot_labor" readonly class="readonly"></div>
-        <div><label>Tax</label><input type="number" step="0.01" id="f_tax" oninput="calculateMath()"></div>
-        <div><label>Trip Fee</label><input type="number" step="0.01" id="f_trip" oninput="calculateMath()"></div>
-        <div class="full"><label>Calculated Grand Total</label><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total"></div>
-      </div>
-
-      <div class="action-row" style="margin-top: 1.5rem;">
-        <button type="submit" class="btn-primary" style="flex: 2;">💾 Save Order</button>
-        <button type="button" class="btn-secondary" style="flex: 1;" onclick="cancelEdit()">Discard</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Discrepancy Modal (Overlay) -->
-  <div id="discrepancyModal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3 style="color: #ef4444; margin-top: 0;">⚠️ Total Mismatch</h3>
-      <p style="font-size: 0.9rem; color: var(--muted);">
-        The app calculated <strong>$<span id="calcTotalDisplay"></span></strong> based on the items, 
-        but the paper says <strong>$<span id="paperTotalDisplay"></span></strong>.
-      </p>
-      <label>Reason for discrepancy (required):</label>
-      <input type="text" id="f_discrepancy_reason" placeholder="e.g., Forgot to write tax, math error on paper..." required>
-      <div class="action-row" style="margin-top: 1rem;">
-        <button class="btn-primary" onclick="confirmDiscrepancySave()">Acknowledge & Save</button>
-        <button class="btn-secondary" onclick="closeDiscrepancyModal()">Cancel</button>
+    <div id="settingsCard" class="card hidden slide-down">
+      <label>Google Gemini API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy..." />
+      <div class="action-row" style="margin-top: 10px;">
+        <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
+        <button class="btn-secondary" onclick="toggleSettings()">Close</button>
       </div>
     </div>
+
+    <!-- Scan & Upload Actions -->
+    <div class="scan-actions grid">
+      <label for="cameraInput" class="btn-scan">
+        <span class="icon">📷</span> Camera
+      </label>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="processImage(event)">
+
+      <label for="galleryInput" class="btn-scan btn-upload">
+        <span class="icon">🖼️</span> Upload
+      </label>
+      <input type="file" id="galleryInput" accept="image/*" onchange="processImage(event)">
+    </div>
+
+    <div id="statusMsg" class="hidden status-pulse">Analyzing document & calculating totals...</div>
+
+    <!-- Main Editor -->
+    <div id="editorCard" class="card hidden fade-in">
+      <form id="orderForm" onsubmit="handleSaveInitiation(event)">
+        <input type="hidden" id="f_paper_total">
+        
+        <div class="section-header">Customer Info</div>
+        <div class="grid">
+          <div><label>Date</label><input type="text" id="f_date"></div>
+          <div><label>Phone</label><input type="tel" id="f_phone"></div>
+          <div class="full"><label>Name / Property</label><input type="text" id="f_name"></div>
+          <div class="full"><label>Address</label><input type="text" id="f_address"></div>
+        </div>
+
+        <div class="section-header">Parts & Materials</div>
+        <table id="partsTable">
+          <thead><tr><th width="15%">Qty</th><th width="60%">Description</th><th width="25%">Amount</th></tr></thead>
+          <tbody id="partsBody"></tbody>
+        </table>
+        <button type="button" class="btn-dashed" onclick="addPartRow()">+ Add Part</button>
+
+        <div class="section-header">Labor Performed</div>
+        <table id="laborTable">
+          <thead><tr><th width="75%">Description</th><th width="25%">Amount</th></tr></thead>
+          <tbody id="laborBody"></tbody>
+        </table>
+        <button type="button" class="btn-dashed" onclick="addLaborRow()">+ Add Labor</button>
+
+        <div class="section-header">Notes</div>
+        <textarea id="f_notes" rows="2" placeholder="Add any specific details..."></textarea>
+
+        <div class="section-header">Totals</div>
+        <div class="grid">
+          <div><label>Total Materials</label><input type="number" step="0.01" id="f_tot_materials" readonly class="readonly"></div>
+          <div><label>Total Labor</label><input type="number" step="0.01" id="f_tot_labor" readonly class="readonly"></div>
+          <div><label>Tax</label><input type="number" step="0.01" id="f_tax" oninput="calculateMath()"></div>
+          <div><label>Trip Fee</label><input type="number" step="0.01" id="f_trip" oninput="calculateMath()"></div>
+          <div class="full"><label>Calculated Grand Total</label><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total"></div>
+        </div>
+
+        <div class="action-row" style="margin-top: 1.5rem;">
+          <button type="submit" class="btn-primary" style="flex: 2;">💾 Save Order</button>
+          <button type="button" class="btn-secondary" style="flex: 1;" onclick="cancelEdit()">Discard</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Discrepancy Modal -->
+    <div id="discrepancyModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h3 style="color: #ef4444; margin-top: 0;">⚠️ Total Mismatch</h3>
+        <p style="font-size: 0.9rem; color: var(--muted);">
+          Calculated: <strong>$<span id="calcTotalDisplay"></span></strong> | Written: <strong>$<span id="paperTotalDisplay"></span></strong>.
+        </p>
+        <label>Reason for discrepancy:</label>
+        <input type="text" id="f_discrepancy_reason" required>
+        <div class="action-row" style="margin-top: 1rem;">
+          <button class="btn-primary" onclick="confirmDiscrepancySave()">Save</button>
+          <button class="btn-secondary" onclick="closeDiscrepancyModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-header">
+      <h2>Stored Orders</h2>
+      <button class="btn-outline" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+    <div id="savedList"></div>
   </div>
 
-  <div class="history-header">
-    <h2>Stored Orders</h2>
-    <button class="btn-outline" onclick="exportCSV()">📥 Export CSV</button>
+  <!-- PRINTABLE INVOICE TEMPLATE (Hidden until generation) -->
+  <div id="invoice-template">
+    <div class="inv-header">
+      <img src="IMG_9956.jpeg" class="inv-logo" alt="Living Waters">
+      <div class="inv-company">
+        Living Waters Pools & Spa Inc.<br>
+        9284 Ogren Ave NE<br>
+        Otsego, MN 55330<br>
+        612-384-3416
+      </div>
+      <div class="inv-title">
+        Job Work Order<br>
+        <small>ESTIMATE (VALID FOR 30 DAYS)</small>
+      </div>
+    </div>
+
+    <div class="inv-info-grid">
+      <div class="inv-box"><strong>Date</strong><br><span id="inv-date"></span></div>
+      <div class="inv-box"><strong>Phone</strong><br><span id="inv-phone"></span></div>
+      <div class="inv-box inv-checkboxes">
+        <input type="checkbox"> Service &nbsp; <input type="checkbox"> Will Call<br>
+        <input type="checkbox"> Install &nbsp; <input type="checkbox"> Deliver
+      </div>
+      <div class="inv-box full-row"><strong>Name</strong><br><span id="inv-name" class="handwriting"></span></div>
+      <div class="inv-box full-row"><strong>Address</strong><br><span id="inv-address" class="handwriting"></span></div>
+    </div>
+
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th width="10%">Qty.</th>
+          <th width="60%">Description of parts or materials</th>
+          <th width="15%">Price</th>
+          <th width="15%">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="inv-parts-body"></tbody>
+    </table>
+
+    <div class="inv-bottom">
+      <div class="inv-labor-box">
+        <strong>Labor Performed</strong>
+        <div id="inv-labor-list" class="handwriting"></div>
+      </div>
+      <div class="inv-totals">
+        <div class="inv-tot-row"><span>Total Materials</span> <span id="inv-tot-mat"></span></div>
+        <div class="inv-tot-row"><span>Tax</span> <span id="inv-tax"></span></div>
+        <div class="inv-tot-row"><span>Total Labor</span> <span id="inv-tot-lab"></span></div>
+        <div class="inv-tot-row"><span>Trip</span> <span id="inv-trip"></span></div>
+        <div class="inv-tot-row inv-grand"><span>Total Amount</span> <span id="inv-grand"></span></div>
+      </div>
+    </div>
+
+    <div class="inv-footer">
+      Estimates are for labor. Material additional. We will not be responsible for loss or damage caused by fire, theft or any other causes beyond our control.<br>
+      <strong>Thank You!</strong>
+    </div>
   </div>
-  <div id="savedList"></div>
 
   <script src="app.js"></script>
 </body>
