@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Work Order Vault</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e293b">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>Work Order Vault</h1>
+    <button class="btn-secondary" onclick="toggleSettings()">⚙️ Settings</button>
+  </header>
+
+  <div id="settingsCard" class="card hidden">
+    <label>Google Gemini API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="AIzaSy..." />
+    <div style="margin-top: 10px; display: flex; gap: 10px;">
+      <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
+      <button class="btn-secondary" onclick="toggleSettings()">Close</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="cameraInput" class="btn-primary" style="margin: 0; cursor: pointer; display: block; text-align: center;">
+      📷 Scan Work Order
+    </label>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="processImage(event)">
+  </div>
+
+  <div id="statusMsg" class="hidden" style="text-align: center; color: #38bdf8; padding: 1rem;">Scanning document...</div>
+
+  <div id="editorCard" class="card hidden">
+    <form id="orderForm" onsubmit="saveRecord(event)">
+      
+      <!-- Customer Info -->
+      <h3>Customer Info</h3>
+      <div class="grid">
+        <div><label>Date</label><input type="text" id="f_date"></div>
+        <div><label>Phone</label><input type="tel" id="f_phone"></div>
+        <div class="full"><label>Name / Property</label><input type="text" id="f_name"></div>
+        <div class="full"><label>Address</label><input type="text" id="f_address"></div>
+      </div>
+
+      <!-- Parts & Materials -->
+      <h3>Parts & Materials</h3>
+      <table id="partsTable">
+        <thead>
+          <tr>
+            <th width="15%">Qty</th>
+            <th width="60%">Description</th>
+            <th width="25%">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="partsBody"></tbody>
+      </table>
+      <button type="button" class="btn-secondary add-btn" onclick="addPartRow()">+ Add Part</button>
+
+      <!-- Labor -->
+      <h3>Labor Performed</h3>
+      <table id="laborTable">
+        <thead>
+          <tr>
+            <th width="75%">Description</th>
+            <th width="25%">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="laborBody"></tbody>
+      </table>
+      <button type="button" class="btn-secondary add-btn" onclick="addLaborRow()">+ Add Labor</button>
+
+      <!-- Totals -->
+      <h3>Totals</h3>
+      <div class="grid">
+        <div><label>Total Materials</label><input type="number" step="0.01" id="f_tot_materials" readonly class="readonly"></div>
+        <div><label>Tax</label><input type="number" step="0.01" id="f_tax" oninput="calculateMath()"></div>
+        <div><label>Total Labor</label><input type="number" step="0.01" id="f_tot_labor" readonly class="readonly"></div>
+        <div><label>Trip Fee</label><input type="number" step="0.01" id="f_trip" oninput="calculateMath()"></div>
+        <div class="full"><label>Grand Total</label><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total"></div>
+      </div>
+
+      <div class="actions" style="margin-top: 20px; display: flex; gap: 10px;">
+        <button type="submit" class="btn-primary" style="flex: 2;">💾 Save to Database</button>
+        <button type="button" class="btn-secondary" style="flex: 1;" onclick="document.getElementById('editorCard').classList.add('hidden')">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="history-header">
+    <h2>Stored Orders</h2>
+    <button class="btn-secondary" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div id="savedList"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
