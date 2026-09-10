@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Living Scanner</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#09090b">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="app-header">
-    <img src="IMG_9956.jpeg" alt="Living Waters" class="main-logo">
+    <div class="logo-plate">
+      <img src="IMG_9956.jpeg" alt="Living Waters" class="main-logo">
+    </div>
     <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
   </header>
 
@@ -44,39 +46,66 @@
         
         <div class="section-header">Customer Details</div>
         <div class="grid">
-          <div><label>Date</label><input type="text" id="f_date"></div>
-          <div><label>Phone</label><input type="tel" id="f_phone"></div>
-          <div class="full"><label>Name / Property</label><input type="text" id="f_name"></div>
-          <div class="full"><label>Address</label><input type="text" id="f_address"></div>
+          <div>
+            <label>Date</label>
+            <input type="date" id="f_date" class="advanced-input">
+          </div>
+          <div>
+            <label>Phone Number</label>
+            <input type="tel" id="f_phone" class="advanced-input" placeholder="(555) 555-5555">
+          </div>
+          <div class="full">
+            <label>Name / Property</label>
+            <input type="text" id="f_name" class="advanced-input">
+          </div>
+          <div class="full">
+            <label>Address</label>
+            <input type="text" id="f_address" class="advanced-input">
+          </div>
         </div>
 
         <div class="section-header">Parts & Materials</div>
         <table id="partsTable">
-          <thead><tr><th style="width:15%;">Qty</th><th style="width:60%;">Description</th><th style="width:25%;">Amount</th></tr></thead>
+          <thead><tr><th style="width:20%;">Qty</th><th style="width:50%;">Description</th><th style="width:30%;">Amount</th></tr></thead>
           <tbody id="partsBody"></tbody>
         </table>
         <button type="button" class="btn-dashed" onclick="addPartRow()">+ Add Part</button>
 
         <div class="section-header">Labor Performed</div>
         <table id="laborTable">
-          <thead><tr><th style="width:75%;">Description</th><th style="width:25%;">Amount</th></tr></thead>
+          <thead><tr><th style="width:70%;">Description</th><th style="width:30%;">Amount</th></tr></thead>
           <tbody id="laborBody"></tbody>
         </table>
         <button type="button" class="btn-dashed" onclick="addLaborRow()">+ Add Labor</button>
 
         <div class="section-header">Additional Notes</div>
-        <textarea id="f_notes" rows="2" placeholder="Add specific details..."></textarea>
+        <textarea id="f_notes" rows="2" class="advanced-input" placeholder="Add specific details..."></textarea>
 
         <div class="section-header">Financials</div>
         <div class="grid">
-          <div><label>Total Materials</label><input type="number" step="0.01" id="f_tot_materials" readonly class="readonly"></div>
-          <div><label>Total Labor</label><input type="number" step="0.01" id="f_tot_labor" readonly class="readonly"></div>
-          <div><label>Tax</label><input type="number" step="0.01" id="f_tax" oninput="calculateMath()"></div>
-          <div><label>Trip Fee</label><input type="number" step="0.01" id="f_trip" oninput="calculateMath()"></div>
-          <div class="full"><label>Grand Total</label><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total"></div>
+          <div>
+            <label>Total Materials</label>
+            <div class="currency-wrap"><input type="number" step="0.01" id="f_tot_materials" readonly class="readonly advanced-input"></div>
+          </div>
+          <div>
+            <label>Total Labor</label>
+            <div class="currency-wrap"><input type="number" step="0.01" id="f_tot_labor" readonly class="readonly advanced-input"></div>
+          </div>
+          <div>
+            <label>Tax</label>
+            <div class="currency-wrap"><input type="number" step="0.01" id="f_tax" class="advanced-input" oninput="calculateMath()"></div>
+          </div>
+          <div>
+            <label>Trip Fee</label>
+            <div class="currency-wrap"><input type="number" step="0.01" id="f_trip" class="advanced-input" oninput="calculateMath()"></div>
+          </div>
+          <div class="full">
+            <label>Grand Total</label>
+            <div class="currency-wrap"><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total advanced-input"></div>
+          </div>
         </div>
 
-        <div class="action-row" style="margin-top: 2rem;">
+        <div class="action-row" style="margin-top: 2.5rem;">
           <button type="submit" class="btn-primary" style="flex: 2;">Save Record</button>
           <button type="button" class="btn-secondary" style="flex: 1;" onclick="cancelEdit()">Discard</button>
         </div>
@@ -85,12 +114,12 @@
 
     <div id="discrepancyModal" class="modal-overlay hidden">
       <div class="modal-content">
-        <h3 style="color: #dc2626; margin-top: 0; font-weight: 600;">System Discrepancy</h3>
-        <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1.5rem;">
-          The calculated total is <strong>$<span id="calcTotalDisplay"></span></strong>, but the document total reads <strong>$<span id="paperTotalDisplay"></span></strong>.
+        <h3 style="color: #ef4444; margin-top: 0; font-weight: 600;">System Discrepancy</h3>
+        <p style="font-size: 0.9rem; color: #a1a1aa; margin-bottom: 1.5rem;">
+          Calculated total: <strong>$<span id="calcTotalDisplay"></span></strong><br>Document total: <strong>$<span id="paperTotalDisplay"></span></strong>
         </p>
         <label>Reason for override (Required):</label>
-        <input type="text" id="f_discrepancy_reason" required>
+        <input type="text" id="f_discrepancy_reason" class="advanced-input" required>
         <div class="action-row" style="margin-top: 1.5rem;">
           <button class="btn-primary" onclick="confirmDiscrepancySave()">Authorize & Save</button>
           <button class="btn-secondary" onclick="closeDiscrepancyModal()">Cancel</button>
@@ -105,34 +134,73 @@
     <div id="savedList"></div>
   </div>
 
+  <!-- MODERN PROFESSIONAL INVOICE TEMPLATE -->
   <div id="invoice-template">
-    <div class="inv-header">
-      <img src="IMG_9956.jpeg" class="inv-logo" alt="Living Waters">
-      <div class="inv-company">Living Waters Pools & Spa Inc.<br>9284 Ogren Ave NE<br>Otsego, MN 55330<br>612-384-3416</div>
-      <div class="inv-title">Job Work Order<br><small>ESTIMATE (VALID FOR 30 DAYS)</small></div>
-    </div>
-    <div class="inv-info-grid">
-      <div class="inv-box"><strong>Date</strong><br><span id="inv-date"></span></div>
-      <div class="inv-box"><strong>Phone</strong><br><span id="inv-phone"></span></div>
-      <div class="inv-box inv-checkboxes"><input type="checkbox"> Service &nbsp; <input type="checkbox"> Will Call<br><input type="checkbox"> Install &nbsp; <input type="checkbox"> Deliver</div>
-      <div class="inv-box full-row"><strong>Name</strong><br><span id="inv-name" class="handwriting"></span></div>
-      <div class="inv-box full-row"><strong>Address</strong><br><span id="inv-address" class="handwriting"></span></div>
-    </div>
-    <table class="inv-table">
-      <thead><tr><th style="width:10%;">Qty.</th><th style="width:60%;">Description of parts or materials</th><th style="width:15%;">Price</th><th style="width:15%;">Amount</th></tr></thead>
-      <tbody id="inv-parts-body"></tbody>
-    </table>
-    <div class="inv-bottom">
-      <div class="inv-labor-box"><strong>Labor Performed</strong><div id="inv-labor-list" class="handwriting"></div></div>
-      <div class="inv-totals">
-        <div class="inv-tot-row"><span>Total Materials</span> <span id="inv-tot-mat"></span></div>
-        <div class="inv-tot-row"><span>Tax</span> <span id="inv-tax"></span></div>
-        <div class="inv-tot-row"><span>Total Labor</span> <span id="inv-tot-lab"></span></div>
-        <div class="inv-tot-row"><span>Trip</span> <span id="inv-trip"></span></div>
-        <div class="inv-tot-row inv-grand"><span>Total Amount</span> <span id="inv-grand"></span></div>
+    <div class="inv-header-flex">
+      <div class="inv-company-details">
+        <h1>Living Waters Pools & Spa Inc.</h1>
+        <p>9284 Ogren Ave NE<br>Otsego, MN 55330<br>(612) 384-3416</p>
+      </div>
+      <div class="inv-logo-wrap">
+        <img src="IMG_9956.jpeg" class="inv-logo" alt="Living Waters">
       </div>
     </div>
-    <div class="inv-footer">Estimates are for labor. Material additional. We will not be responsible for loss or damage caused by fire, theft or any other causes beyond our control.<br><strong>Thank You!</strong></div>
+
+    <div class="inv-title-bar">
+      <h2>JOB WORK ORDER / ESTIMATE</h2>
+      <span class="inv-date-display">Date: <strong id="inv-date"></strong></span>
+    </div>
+
+    <div class="inv-client-box">
+      <div class="inv-client-col">
+        <div class="inv-label">Customer / Property:</div>
+        <div class="inv-value" id="inv-name"></div>
+        <div class="inv-value" id="inv-address"></div>
+      </div>
+      <div class="inv-client-col">
+        <div class="inv-label">Contact:</div>
+        <div class="inv-value" id="inv-phone"></div>
+        <div class="inv-label" style="margin-top: 10px;">Service Type:</div>
+        <div class="inv-value inv-checkboxes">
+          <span><input type="checkbox"> Service</span>
+          <span><input type="checkbox"> Install</span>
+          <span><input type="checkbox"> Will Call</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="inv-table-container">
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th style="width: 10%;">QTY</th>
+            <th style="width: 60%;">DESCRIPTION OF PARTS OR MATERIALS</th>
+            <th style="width: 15%; text-align: right;">PRICE</th>
+            <th style="width: 15%; text-align: right;">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody id="inv-parts-body"></tbody>
+      </table>
+    </div>
+
+    <div class="inv-lower-flex">
+      <div class="inv-labor-section">
+        <div class="inv-section-title">LABOR PERFORMED & NOTES</div>
+        <div id="inv-labor-list" class="inv-labor-content"></div>
+      </div>
+      <div class="inv-totals-section">
+        <div class="inv-tot-row"><span>Total Materials</span> <span id="inv-tot-mat"></span></div>
+        <div class="inv-tot-row"><span>Total Labor</span> <span id="inv-tot-lab"></span></div>
+        <div class="inv-tot-row"><span>Trip Fee</span> <span id="inv-trip"></span></div>
+        <div class="inv-tot-row"><span>Tax</span> <span id="inv-tax"></span></div>
+        <div class="inv-tot-row inv-grand"><span>GRAND TOTAL</span> <span id="inv-grand"></span></div>
+      </div>
+    </div>
+
+    <div class="inv-footer">
+      <p>Estimates are for labor. Material additional. We will not be responsible for loss or damage caused by fire, theft or any other causes beyond our control.</p>
+      <h3>Thank You For Your Business!</h3>
+    </div>
   </div>
 
   <script src="app.js"></script>
