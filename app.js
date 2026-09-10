@@ -92,7 +92,7 @@ async function processImage(event) {
     3. Format all amounts as standard numbers.
     4. Format phone as (XXX) XXX-XXXX if possible.`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`;
     const options = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
