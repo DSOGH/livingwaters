@@ -5,34 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Living Scanner</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#04101a">
+  <meta name="theme-color" content="#ffffff">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app-container">
-    <header>
-      <div class="logo">
-        <img src="IMG_9956.jpeg" alt="Living Waters" class="main-logo">
-      </div>
-      <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
-    </header>
+  <header class="app-header">
+    <img src="IMG_9956.jpeg" alt="Living Waters" class="main-logo">
+    <button class="btn-icon" onclick="toggleSettings()">⚙️</button>
+  </header>
 
-    <div id="settingsCard" class="card hidden slide-down">
+  <div id="app-container">
+    <div id="settingsCard" class="card hidden">
       <label>Google Gemini API Key</label>
       <input type="password" id="apiKeyInput" placeholder="AIzaSy..." />
-      <div class="action-row" style="margin-top: 10px;">
+      <div class="action-row" style="margin-top: 15px;">
         <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
-        <button class="btn-upload" onclick="toggleSettings()">Close</button>
+        <button class="btn-secondary" onclick="toggleSettings()">Close</button>
       </div>
     </div>
 
     <div class="scan-actions grid">
-      <label for="cameraInput" class="btn-scan">
+      <label for="cameraInput" class="btn-primary btn-scan">
         <span class="icon">📷</span> Camera
       </label>
       <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="processImage(event)">
 
-      <label for="galleryInput" class="btn-scan btn-upload">
+      <label for="galleryInput" class="btn-secondary btn-scan">
         <span class="icon">🖼️</span> Upload
       </label>
       <input type="file" id="galleryInput" accept="image/*" onchange="processImage(event)">
@@ -44,7 +42,7 @@
       <form id="orderForm" onsubmit="handleSaveInitiation(event)">
         <input type="hidden" id="f_paper_total">
         
-        <div class="section-header">Customer Info</div>
+        <div class="section-header">Customer Details</div>
         <div class="grid">
           <div><label>Date</label><input type="text" id="f_date"></div>
           <div><label>Phone</label><input type="tel" id="f_phone"></div>
@@ -66,43 +64,43 @@
         </table>
         <button type="button" class="btn-dashed" onclick="addLaborRow()">+ Add Labor</button>
 
-        <div class="section-header">Notes</div>
-        <textarea id="f_notes" rows="2" placeholder="Add any specific details..."></textarea>
+        <div class="section-header">Additional Notes</div>
+        <textarea id="f_notes" rows="2" placeholder="Add specific details..."></textarea>
 
-        <div class="section-header">Totals</div>
+        <div class="section-header">Financials</div>
         <div class="grid">
           <div><label>Total Materials</label><input type="number" step="0.01" id="f_tot_materials" readonly class="readonly"></div>
           <div><label>Total Labor</label><input type="number" step="0.01" id="f_tot_labor" readonly class="readonly"></div>
           <div><label>Tax</label><input type="number" step="0.01" id="f_tax" oninput="calculateMath()"></div>
           <div><label>Trip Fee</label><input type="number" step="0.01" id="f_trip" oninput="calculateMath()"></div>
-          <div class="full"><label>Calculated Grand Total</label><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total"></div>
+          <div class="full"><label>Grand Total</label><input type="number" step="0.01" id="f_grand_total" readonly class="readonly grand-total"></div>
         </div>
 
-        <div class="action-row" style="margin-top: 1.5rem;">
-          <button type="submit" class="btn-primary" style="flex: 2;">💾 Save Order</button>
-          <button type="button" class="btn-upload" style="flex: 1;" onclick="cancelEdit()">Discard</button>
+        <div class="action-row" style="margin-top: 2rem;">
+          <button type="submit" class="btn-primary" style="flex: 2;">Save Record</button>
+          <button type="button" class="btn-secondary" style="flex: 1;" onclick="cancelEdit()">Discard</button>
         </div>
       </form>
     </div>
 
     <div id="discrepancyModal" class="modal-overlay hidden">
-      <div class="modal-content card">
-        <h3 style="color: var(--danger); margin-top: 0;">⚠️ Total Mismatch</h3>
-        <p style="font-size: 0.9rem; color: var(--text);">
-          Calculated: <strong>$<span id="calcTotalDisplay"></span></strong> | Written: <strong>$<span id="paperTotalDisplay"></span></strong>.
+      <div class="modal-content">
+        <h3 style="color: #dc2626; margin-top: 0; font-weight: 600;">System Discrepancy</h3>
+        <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1.5rem;">
+          The calculated total is <strong>$<span id="calcTotalDisplay"></span></strong>, but the document total reads <strong>$<span id="paperTotalDisplay"></span></strong>.
         </p>
-        <label>Reason for discrepancy:</label>
+        <label>Reason for override (Required):</label>
         <input type="text" id="f_discrepancy_reason" required>
-        <div class="action-row" style="margin-top: 1rem;">
-          <button class="btn-primary" onclick="confirmDiscrepancySave()">Save</button>
-          <button class="btn-upload" onclick="closeDiscrepancyModal()">Cancel</button>
+        <div class="action-row" style="margin-top: 1.5rem;">
+          <button class="btn-primary" onclick="confirmDiscrepancySave()">Authorize & Save</button>
+          <button class="btn-secondary" onclick="closeDiscrepancyModal()">Cancel</button>
         </div>
       </div>
     </div>
 
     <div class="history-header">
-      <h2 style="color: var(--muted);">Stored Orders</h2>
-      <button class="btn-outline" onclick="exportCSV()">📥 Export CSV</button>
+      <h2>Recent Transactions</h2>
+      <button class="btn-outline" onclick="exportCSV()">Export Data</button>
     </div>
     <div id="savedList"></div>
   </div>
@@ -110,46 +108,22 @@
   <div id="invoice-template">
     <div class="inv-header">
       <img src="IMG_9956.jpeg" class="inv-logo" alt="Living Waters">
-      <div class="inv-company">
-        Living Waters Pools & Spa Inc.<br>
-        9284 Ogren Ave NE<br>
-        Otsego, MN 55330<br>
-        612-384-3416
-      </div>
-      <div class="inv-title">
-        Job Work Order<br>
-        <small>ESTIMATE (VALID FOR 30 DAYS)</small>
-      </div>
+      <div class="inv-company">Living Waters Pools & Spa Inc.<br>9284 Ogren Ave NE<br>Otsego, MN 55330<br>612-384-3416</div>
+      <div class="inv-title">Job Work Order<br><small>ESTIMATE (VALID FOR 30 DAYS)</small></div>
     </div>
-
     <div class="inv-info-grid">
       <div class="inv-box"><strong>Date</strong><br><span id="inv-date"></span></div>
       <div class="inv-box"><strong>Phone</strong><br><span id="inv-phone"></span></div>
-      <div class="inv-box inv-checkboxes">
-        <input type="checkbox"> Service &nbsp; <input type="checkbox"> Will Call<br>
-        <input type="checkbox"> Install &nbsp; <input type="checkbox"> Deliver
-      </div>
+      <div class="inv-box inv-checkboxes"><input type="checkbox"> Service &nbsp; <input type="checkbox"> Will Call<br><input type="checkbox"> Install &nbsp; <input type="checkbox"> Deliver</div>
       <div class="inv-box full-row"><strong>Name</strong><br><span id="inv-name" class="handwriting"></span></div>
       <div class="inv-box full-row"><strong>Address</strong><br><span id="inv-address" class="handwriting"></span></div>
     </div>
-
     <table class="inv-table">
-      <thead>
-        <tr>
-          <th style="width:10%;">Qty.</th>
-          <th style="width:60%;">Description of parts or materials</th>
-          <th style="width:15%;">Price</th>
-          <th style="width:15%;">Amount</th>
-        </tr>
-      </thead>
+      <thead><tr><th style="width:10%;">Qty.</th><th style="width:60%;">Description of parts or materials</th><th style="width:15%;">Price</th><th style="width:15%;">Amount</th></tr></thead>
       <tbody id="inv-parts-body"></tbody>
     </table>
-
     <div class="inv-bottom">
-      <div class="inv-labor-box">
-        <strong>Labor Performed</strong>
-        <div id="inv-labor-list" class="handwriting"></div>
-      </div>
+      <div class="inv-labor-box"><strong>Labor Performed</strong><div id="inv-labor-list" class="handwriting"></div></div>
       <div class="inv-totals">
         <div class="inv-tot-row"><span>Total Materials</span> <span id="inv-tot-mat"></span></div>
         <div class="inv-tot-row"><span>Tax</span> <span id="inv-tax"></span></div>
@@ -158,11 +132,7 @@
         <div class="inv-tot-row inv-grand"><span>Total Amount</span> <span id="inv-grand"></span></div>
       </div>
     </div>
-
-    <div class="inv-footer">
-      Estimates are for labor. Material additional. We will not be responsible for loss or damage caused by fire, theft or any other causes beyond our control.<br>
-      <strong>Thank You!</strong>
-    </div>
+    <div class="inv-footer">Estimates are for labor. Material additional. We will not be responsible for loss or damage caused by fire, theft or any other causes beyond our control.<br><strong>Thank You!</strong></div>
   </div>
 
   <script src="app.js"></script>
