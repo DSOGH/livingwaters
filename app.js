@@ -83,7 +83,7 @@ async function processImage(event) {
     2. "written_total" MUST be the exact final grand total written on the paper.
     3. Format all amounts as standard numbers.`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`;
     const options = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
