@@ -25,7 +25,7 @@ function saveApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
   if (!key) return alert("Please enter a valid key.");
   localStorage.setItem('GEMINI_KEY', key);
-  alert("API Key saved!");
+  alert("API Key secured.");
   toggleSettings();
 }
 
@@ -34,10 +34,10 @@ async function processImage(event) {
   if (!file) return;
   
   const key = localStorage.getItem('GEMINI_KEY');
-  if (!key) return alert("Please add your API key in Settings first.");
+  if (!key) return alert("System requires API configuration. Please set your key in Settings.");
 
   document.getElementById('statusMsg').classList.remove('hidden');
-  document.getElementById('statusMsg').innerText = "Compressing & analyzing document...";
+  document.getElementById('statusMsg').innerText = "Processing document...";
   currentEditId = null; 
   
   try {
@@ -83,7 +83,7 @@ async function processImage(event) {
     2. "written_total" MUST be the exact final grand total written on the paper.
     3. Format all amounts as standard numbers.`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
     const options = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -96,17 +96,14 @@ async function processImage(event) {
     let retries = 0;
     let delay = 2000;
     
-    // Automatic exponential backoff retry loop
     while (retries < 5) {
       const res = await fetch(url, options);
       jsonResponse = await res.json();
       
       if (jsonResponse.error && jsonResponse.error.message.includes("high demand")) {
         retries++;
-        if (retries >= 5) throw new Error("Google's servers are completely overloaded right now. Please try again later.");
-        
-        document.getElementById('statusMsg').innerText = `Servers busy. Silently retrying... (Attempt ${retries}/5)`;
-        
+        if (retries >= 5) throw new Error("Server timeout. Please try again.");
+        document.getElementById('statusMsg').innerText = `Re-establishing connection... (${retries}/5)`;
         const jitter = Math.random() * 1000;
         await new Promise(resolve => setTimeout(resolve, delay + jitter));
         delay *= 2; 
@@ -123,7 +120,7 @@ async function processImage(event) {
     populateForm(data);
     
   } catch (err) {
-    alert("Scan failed: " + err.message);
+    alert("System Error: " + err.message);
   } finally {
     document.getElementById('statusMsg').classList.add('hidden');
     event.target.value = '';
@@ -263,12 +260,12 @@ function loadHistory() {
       <div class="record">
         <div style="flex: 1;">
           <strong style="font-size: 1.05rem;">${v.name || 'Unknown'}</strong><br>
-          <small style="color: var(--muted);">${displayDate} • ${v.address}</small><br>
+          <small style="color: var(--text-muted);">${displayDate} • ${v.address}</small><br>
           <strong style="color: var(--success); font-size: 0.95rem;">$${v.total || '0.00'}</strong>
         </div>
         <div class="record-btn-group">
           <button class="record-btn" onclick="editOrder(${v.id})">Edit</button>
-          <button class="record-btn invoice-btn" onclick="generateInvoice(${v.id})">📄 Invoice</button>
+          <button class="record-btn invoice-btn" onclick="generateInvoice(${v.id})">Invoice</button>
         </div>
       </div>`;
       cursor.continue();
