@@ -29,6 +29,14 @@ function saveApiKey() {
   toggleSettings();
 }
 
+// Parses string dates to YYYY-MM-DD for native HTML date inputs
+function formatDateForInput(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return ''; 
+  return d.toISOString().split('T')[0];
+}
+
 async function processImage(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -81,9 +89,10 @@ async function processImage(event) {
     CRITICAL RULES:
     1. Intelligently separate physical parts from labor. 
     2. "written_total" MUST be the exact final grand total written on the paper.
-    3. Format all amounts as standard numbers.`;
+    3. Format all amounts as standard numbers.
+    4. Format phone as (XXX) XXX-XXXX if possible.`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
     const options = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -128,7 +137,7 @@ async function processImage(event) {
 }
 
 function populateForm(data) {
-  document.getElementById('f_date').value = data.date || '';
+  document.getElementById('f_date').value = formatDateForInput(data.date);
   document.getElementById('f_phone').value = data.phone || '';
   document.getElementById('f_name').value = data.name || '';
   document.getElementById('f_address').value = data.address || '';
@@ -150,17 +159,17 @@ function populateForm(data) {
 function addPartRow(q='', d='', a='') {
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><input type="text" value="${q}"></td>
-    <td><input type="text" value="${d}"></td>
-    <td><input type="number" step="0.01" value="${a}" class="part-amt" oninput="calculateMath()"></td>`;
+    <td><input type="text" value="${q}" class="advanced-input"></td>
+    <td><input type="text" value="${d}" class="advanced-input"></td>
+    <td><div class="currency-wrap"><input type="number" step="0.01" value="${a}" class="part-amt advanced-input" oninput="calculateMath()"></div></td>`;
   document.getElementById('partsBody').appendChild(tr);
 }
 
 function addLaborRow(d='', a='') {
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><input type="text" value="${d}"></td>
-    <td><input type="number" step="0.01" value="${a}" class="labor-amt" oninput="calculateMath()"></td>`;
+    <td><input type="text" value="${d}" class="advanced-input"></td>
+    <td><div class="currency-wrap"><input type="number" step="0.01" value="${a}" class="labor-amt advanced-input" oninput="calculateMath()"></div></td>`;
   document.getElementById('laborBody').appendChild(tr);
 }
 
@@ -208,7 +217,7 @@ function executeFinalSave(discrepancyReason = null) {
     parts.push({
       qty: tr.children[0].firstElementChild.value,
       desc: tr.children[1].firstElementChild.value,
-      amount: tr.children[2].firstElementChild.value
+      amount: tr.children[2].firstElementChild.querySelector('input').value
     });
   });
 
@@ -216,12 +225,16 @@ function executeFinalSave(discrepancyReason = null) {
   document.querySelectorAll('#laborBody tr').forEach(tr => {
     labor.push({
       desc: tr.children[0].firstElementChild.value,
-      amount: tr.children[1].firstElementChild.value
+      amount: tr.children[1].firstElementChild.querySelector('input').value
     });
   });
 
+  const rawDate = document.getElementById('f_date').value;
+  // Convert YYYY-MM-DD back to readable string for history
+  const displayDateStr = rawDate ? new Date(rawDate + "T12:00:00").toLocaleDateString() : '';
+
   const record = {
-    date: document.getElementById('f_date').value,
+    date: displayDateStr,
     phone: document.getElementById('f_phone').value,
     name: document.getElementById('f_name').value,
     address: document.getElementById('f_address').value,
@@ -296,32 +309,30 @@ function generateInvoice(id) {
 
     const tbody = document.getElementById('inv-parts-body');
     tbody.innerHTML = '';
-    let rowCount = 0;
     
     (data.parts || []).forEach(p => {
       if (p.desc || p.amount > 0) {
-        tbody.innerHTML += `<tr><td>${p.qty}</td><td class="handwriting">${p.desc}</td><td></td><td>${p.amount}</td></tr>`;
-        rowCount++;
+        tbody.innerHTML += `<tr>
+          <td>${p.qty}</td>
+          <td class="handwriting">${p.desc}</td>
+          <td style="text-align:right;"></td>
+          <td style="text-align:right;">$${p.amount}</td>
+        </tr>`;
       }
     });
-
-    while (rowCount < 10) {
-      tbody.innerHTML += `<tr><td></td><td></td><td></td><td></td></tr>`;
-      rowCount++;
-    }
 
     const laborList = document.getElementById('inv-labor-list');
     laborList.innerHTML = '';
     (data.labor || []).forEach(l => {
       if(l.desc || l.amount > 0) laborList.innerHTML += `<div>${l.desc} - $${l.amount}</div>`;
     });
-    if(data.notes) laborList.innerHTML += `<div style="font-size: 12px; margin-top: 10px; color:#555;">Notes: ${data.notes}</div>`;
+    if(data.notes) laborList.innerHTML += `<div style="font-size: 12px; margin-top: 15px; padding-top:10px; border-top:1px solid #e2e8f0;"><strong>Notes:</strong> ${data.notes}</div>`;
 
-    document.getElementById('inv-tot-mat').innerText = data.materials_total || '0.00';
-    document.getElementById('inv-tax').innerText = data.tax || '0.00';
-    document.getElementById('inv-tot-lab').innerText = data.labor_total || '0.00';
-    document.getElementById('inv-trip').innerText = data.trip || '0.00';
-    document.getElementById('inv-grand').innerText = data.total || '0.00';
+    document.getElementById('inv-tot-mat').innerText = `$${data.materials_total || '0.00'}`;
+    document.getElementById('inv-tax').innerText = `$${data.tax || '0.00'}`;
+    document.getElementById('inv-tot-lab').innerText = `$${data.labor_total || '0.00'}`;
+    document.getElementById('inv-trip').innerText = `$${data.trip || '0.00'}`;
+    document.getElementById('inv-grand').innerText = `$${data.total || '0.00'}`;
 
     window.print();
   };
